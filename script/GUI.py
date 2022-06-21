@@ -99,7 +99,11 @@ class Window(QMainWindow):
 
 		if self.file_extension=="tif":
 			print("TIF file detected. Performing flattening on static image.")
-			self.static_tif_mode()
+			self.capture = imread(self.media_path)
+			if len(self.capture.shape)==2:
+				self.static_tif_mode()
+			elif len(self.capture.shape)==3:
+				self.multi_position_tif_mode()
 
 		elif self.file_extension=="avi":
 			print(f"AVI file detected. Performing flattening every {self.interval} frames.")
@@ -146,10 +150,8 @@ class Window(QMainWindow):
 
 	def static_tif_mode(self):
 
-		capture = imread(self.media_path)
-
 		print("Fitting the parabola on the image...")
-		para = self.fit_parabola(capture)
+		para = self.fit_parabola(self.capture)
 
 		output_dir = os.path.split(self.media_path)[0]+"/"+os.path.split(self.media_path)[-1][:-4]
 		name = os.path.split(self.media_path)[-1][:-4]
@@ -157,21 +159,50 @@ class Window(QMainWindow):
 		if not os.path.exists(output_dir):
 			os.mkdir(output_dir)
 
-		plt.imshow(capture,cmap="gray")
+		plt.imshow(self.capture,cmap="gray")
 		plt.imshow(para,alpha=0.3)
 		plt.colorbar()
 		plt.pause(3)
 		plt.close()
 
-		correction = capture - para + np.amax(para)
+		correction = self.capture - para + np.amax(para)
 		imwrite(output_dir+f"/{name}_flat.tif", np.array(correction,dtype=np.int32))
 		print(f"Flattened image saved in "+ output_dir+f"/{name}_flat.tif")
 		plt.title("Diagonal slice")
 		plt.plot([correction[i,i] for i in range(np.amin(np.shape(correction)))],label="Flattened")
-		plt.plot([capture[i,i] for i in range(np.amin(np.shape(capture)))],label="Original")
+		plt.plot([self.capture[i,i] for i in range(np.amin(np.shape(self.capture)))],label="Original")
 		plt.legend()
 		plt.pause(2)
 		plt.close()
+
+	def multi_position_tif_mode(self):
+
+		output_dir = os.path.split(self.media_path)[0]+"/"+os.path.split(self.media_path)[-1][:-4]
+		name = os.path.split(self.media_path)[-1][:-4]
+
+		if not os.path.exists(output_dir):
+			os.mkdir(output_dir)
+
+		for j,pos in enumerate(self.capture):
+
+			para = self.fit_parabola(pos)
+
+			plt.imshow(pos,cmap="gray")
+			plt.imshow(para,alpha=0.3)
+			plt.colorbar()
+			plt.pause(3)
+			plt.close()
+
+			correction = pos - para + np.amax(para)
+			imwrite(output_dir+f"/{name}_flat_{j}.tif", np.array(correction/np.mean(correction)*1000,dtype=np.int32))
+			print(f"Flattened image saved in "+ output_dir+f"/{name}_flat.tif")
+			plt.title("Diagonal slice")
+			plt.plot([correction[i,i] for i in range(np.amin(np.shape(correction)))],label="Flattened")
+			plt.plot([pos[i,i] for i in range(np.amin(np.shape(pos)))],label="Original")
+			plt.legend()
+			plt.pause(2)
+			plt.close()			
+
 
 	def avi_mode(self):
 
