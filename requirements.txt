@@ -1,0 +1,7 @@
+numpy>1.19.2
+matplotlib
+tifffile==2020.10.1
+pandas==1.4.2
+glob2
+natsort==7.1.1
+tqdm
