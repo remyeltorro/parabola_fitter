@@ -129,8 +129,8 @@ class Window(QMainWindow):
 			return((x-x0)**2/a**2 + (y-y0)**2/b**2)
 
 		params = Parameters()
-		params.add('x0', value=1)
-		params.add('y0', value=6)
+		params.add('x0', value=image.shape[1]//2)
+		params.add('y0', value=image.shape[0]//2)
 		params.add('a', value=3)
 		params.add('b', value=1)
 
